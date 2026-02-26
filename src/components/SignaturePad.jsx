@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Trash2, Check, X, Type, Pen, Upload, Sparkles, Wand2 } from 'lucide-react';
+import { Trash2, Check, X, Type, Pen, Upload, Sparkles, Wand2, Clock } from 'lucide-react';
 
 const HANDWRITING_FONTS = [
     { name: 'Satisfy', family: "'Satisfy', cursive" },
@@ -16,6 +16,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasDrawn, setHasDrawn] = useState(false);
     const [points, setPoints] = useState([]);
+    const [recentSignatures, setRecentSignatures] = useState([]);
 
     // Type mode states
     const [typedName, setTypedName] = useState('');
@@ -43,6 +44,25 @@ const SignaturePad = ({ onSave, onCancel }) => {
             ctx.lineWidth = 2.5;
         }
     }, [mode]);
+
+    // Charger les signatures récentes au montage
+    useEffect(() => {
+        const saved = localStorage.getItem('recentSignatures');
+        if (saved) {
+            try {
+                setRecentSignatures(JSON.parse(saved));
+            } catch (e) {
+                console.error("Erreur lecture historique", e);
+            }
+        }
+    }, []);
+
+    const saveRecentSignature = (dataURL) => {
+        const current = [...recentSignatures];
+        const updated = [dataURL, ...current.filter(s => s !== dataURL)].slice(0, 3);
+        setRecentSignatures(updated);
+        localStorage.setItem('recentSignatures', JSON.stringify(updated));
+    };
 
     const getCoordinates = (e) => {
         const canvas = canvasRef.current;
@@ -129,7 +149,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
 
             if (finalDataURL) {
                 setIsSaving(true);
-                // On appelle onSave immédiatement pour éviter les erreurs de désynchronisation
+                saveRecentSignature(finalDataURL);
                 onSave(finalDataURL);
             }
         } catch (err) {
@@ -222,6 +242,27 @@ const SignaturePad = ({ onSave, onCancel }) => {
                     </div>
                 )}
             </div>
+
+            {/* Section Signatures Récentes */}
+            {recentSignatures.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-slate-500">
+                        <Clock size={14} />
+                        <span className="text-xs font-bold uppercase tracking-wider">Récentes</span>
+                    </div>
+                    <div className="flex gap-3">
+                        {recentSignatures.map((sig, idx) => (
+                            <div
+                                key={idx}
+                                onClick={() => onSave(sig)}
+                                className="h-16 flex-1 bg-white border-2 border-slate-100 rounded-xl cursor-pointer hover:border-blue-400 hover:shadow-md transition-all flex items-center justify-center overflow-hidden p-2 group"
+                            >
+                                <img src={sig} alt="Signature récente" className="max-h-full opacity-60 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="flex gap-4">
                 <button onClick={() => { if (mode === 'draw') { const ctx = canvasRef.current.getContext('2d'); ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height); setHasDrawn(false); setPoints([]); } else if (mode === 'type') setTypedName(''); else setUploadedImage(null); }} className="px-6 py-4 font-bold text-slate-400 border-2 border-slate-50 rounded-2xl hover:bg-slate-50">

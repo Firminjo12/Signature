@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileDropzone from './components/FileDropzone';
 import SignaturePad from './components/SignaturePad';
 import PdfEditor from './components/PdfEditor';
-import { PenTool, FileText, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { PenTool, FileText, Download, CheckCircle2, AlertCircle, Moon, Sun } from 'lucide-react';
 
 function App() {
   const [file, setFile] = useState(null);
   const [signatureUrl, setSignatureUrl] = useState(null);
   const [step, setStep] = useState(1); // 1: Upload, 2: Signature, 3: Editor
+
+  // Initialisation du mode sombre depuis le localStorage ou système
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const handleFileSelect = (selectedFile) => {
     setFile(selectedFile);
@@ -62,12 +77,21 @@ function App() {
             ))}
           </div>
 
-          <button
-            onClick={reset}
-            className="text-sm font-bold text-slate-400 hover:text-red-500 transition-colors"
-          >
-            Réinitialiser
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+              title={isDarkMode ? "Passer au thème clair" : "Passer au thème sombre"}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button
+              onClick={reset}
+              className="text-sm font-bold text-slate-400 hover:text-red-500 transition-colors"
+            >
+              Réinitialiser
+            </button>
+          </div>
         </div>
       </nav>
 

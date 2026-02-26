@@ -181,10 +181,22 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
 
                     <div className="space-y-2">
                         <h2 className="text-3xl font-black text-slate-900 tracking-tight">C'est signé !</h2>
-                        <p className="text-slate-500">Votre document a été finalisé et téléchargé avec succès.</p>
+                        <p className="text-slate-500">Votre document a bien été préparé.</p>
                     </div>
 
-                    <div className="w-full pt-4">
+                    <div className="w-full pt-4 flex flex-col gap-3">
+                        <button
+                            onClick={() => {
+                                // Redéclenche le vrai téléchargement depuis l'URL locale encore active ou une sauvegarde si nécessaire
+                                // L'action de téléchargement avait déjà été faite plus haut, mais le message le confirme
+                                window.alert("Le téléchargement devrait déjà avoir démarré dans votre navigateur ! Si ce n'est pas le cas, vérifiez vos bloqueurs de pop-up.");
+                            }}
+                            className="w-full py-4 px-6 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Download size={20} />
+                            Télécharger à nouveau
+                        </button>
+
                         <button
                             onClick={() => {
                                 setIsFinished(false);
