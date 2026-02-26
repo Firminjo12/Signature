@@ -212,9 +212,10 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
 
     return (
         <div className="flex flex-col h-full bg-slate-200 overflow-hidden">
-            <div className="bg-white border-b border-slate-300 px-6 py-3 flex items-center justify-between shadow-sm z-30">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+            <div className="bg-white border-b border-slate-300 p-3 md:px-6 md:py-3 flex flex-col lg:flex-row items-center justify-between shadow-sm z-30 gap-4 overflow-y-auto max-h-48 lg:max-h-auto custom-scrollbar shrink-0">
+                <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-4 w-full lg:w-auto">
+                    {/* Navigation */}
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 shrink-0">
                         <button
                             disabled={pageNumber <= 1}
                             onClick={() => setPageNumber(pageNumber - 1)}
@@ -222,7 +223,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                         >
                             <ChevronLeft size={20} />
                         </button>
-                        <span className="px-3 text-sm font-bold text-slate-700 min-w-[100px] text-center">
+                        <span className="px-3 text-sm font-bold text-slate-700 min-w-[70px] md:min-w-[100px] text-center">
                             {pageNumber} / {numPages || '-'}
                         </span>
                         <button
@@ -234,40 +235,42 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                         </button>
                     </div>
 
-                    <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+                    {/* Zoom */}
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 shrink-0">
                         <button onClick={zoomOut} className="p-2 hover:bg-white rounded-lg transition-all"><ZoomOut size={18} /></button>
                         <span className="px-2 text-xs font-black text-slate-500 w-10 text-center uppercase">{Math.round(scale * 100)}%</span>
                         <button onClick={zoomIn} className="p-2 hover:bg-white rounded-lg transition-all"><ZoomIn size={18} /></button>
                     </div>
 
-                    <div className="h-6 w-px bg-slate-200 mx-2" />
+                    <div className="h-6 w-px bg-slate-200 mx-1 lg:mx-2 hidden md:block" />
 
-                    <div className="flex items-center gap-2">
+                    {/* Actions */}
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                         <button
                             onClick={addSignature}
                             disabled={!signatureUrl}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 disabled:opacity-50"
+                            className="flex items-center gap-2 px-3 py-2 md:px-4 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 disabled:opacity-50 shrink-0"
                         >
-                            <Plus size={18} /> Signature
+                            <Plus size={18} /> <span className="hidden sm:inline">Signature</span>
                         </button>
 
                         <button
                             onClick={() => addText()}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50"
+                            className="flex items-center gap-2 px-3 py-2 md:px-4 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 shrink-0"
                         >
-                            <Type size={18} /> Texte
+                            <Type size={18} /> <span className="hidden sm:inline">Texte</span>
                         </button>
 
                         <button
                             onClick={addDate}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50"
+                            className="flex items-center gap-2 px-3 py-2 md:px-4 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 shrink-0"
                         >
-                            <Calendar size={18} /> Date
+                            <Calendar size={18} /> <span className="hidden sm:inline">Date</span>
                         </button>
 
                         <button
                             onClick={onChangeSignature}
-                            className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-slate-600 rounded-xl transition-colors"
+                            className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-slate-600 rounded-xl transition-colors shrink-0"
                             title="Modifier la signature"
                         >
                             <PenSquare size={18} />
@@ -276,7 +279,8 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                         <button
                             onClick={clearAll}
                             disabled={signatures.length === 0 && textElements.length === 0}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-xl"
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-xl shrink-0"
+                            title="Tout effacer"
                         >
                             <Trash2 size={20} />
                         </button>
@@ -286,7 +290,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                 <button
                     onClick={finalizePdf}
                     disabled={(signatures.length === 0 && textElements.length === 0) || isProcessing}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-200"
+                    className="flex items-center justify-center gap-2 px-6 py-3 w-full lg:w-auto bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-200 shrink-0"
                 >
                     {isProcessing ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -297,55 +301,101 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-12 flex justify-center bg-slate-200" ref={containerRef}>
-                {!isFinished && (
-                    <div className="relative mb-12 shadow-2xl bg-white" style={{ width: 'fit-content', height: 'fit-content' }}>
+            <div className="flex flex-1 overflow-hidden">
+                {/* Thumbnails Sidebar */}
+                <div className="w-48 bg-slate-100/90 border-r border-slate-300 overflow-y-auto hidden md:block z-10 shrink-0 relative custom-scrollbar">
+                    {!isFinished && numPages && (
+                        <div className="p-4 pb-2 text-xs font-black text-slate-500 uppercase tracking-widest sticky top-0 bg-slate-100/90 backdrop-blur z-20 shadow-sm flex items-center justify-between">
+                            <span>Pages</span>
+                            <span className="bg-slate-200 px-2 py-0.5 rounded-full text-[10px] text-slate-600">{numPages}</span>
+                        </div>
+                    )}
+                    {!isFinished && (
                         <Document
                             file={file}
-                            onLoadSuccess={onDocumentLoadSuccess}
                             loading={
-                                <div className="p-20 flex flex-col items-center gap-4">
-                                    <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-                                    <p className="font-bold text-slate-400">Préparation...</p>
+                                <div className="p-4 flex flex-col items-center gap-2">
+                                    <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+                                    <span className="text-xs font-bold text-slate-400">Aperçus...</span>
                                 </div>
                             }
                         >
-                            <div className="relative" ref={pageRef}>
-                                <Page
-                                    pageNumber={pageNumber}
-                                    scale={scale}
-                                    renderTextLayer={false}
-                                    renderAnnotationLayer={false}
-                                />
-
-                                {/* Signatures layer */}
-                                {signatures.filter(s => s.page === pageNumber).map(sig => (
-                                    <SignatureOverlay
-                                        key={sig.id}
-                                        imageUrl={sig.url}
-                                        width={sig.width}
-                                        height={sig.height}
-                                        position={{ x: sig.x, y: sig.y }}
-                                        onUpdate={(pos) => updateSignaturePosition(sig.id, pos)}
-                                        onRemove={() => removeSignature(sig.id)}
-                                    />
-                                ))}
-
-                                {/* Text layer */}
-                                {textElements.filter(t => t.page === pageNumber).map(text => (
-                                    <TextOverlay
-                                        key={text.id}
-                                        initialText={text.text}
-                                        fontSize={text.fontSize}
-                                        position={{ x: text.x, y: text.y }}
-                                        onUpdate={(data) => updateTextPosition(text.id, data)}
-                                        onRemove={() => removeText(text.id)}
-                                    />
+                            <div className="py-2">
+                                {numPages && Array.from(new Array(numPages), (el, index) => (
+                                    <div
+                                        key={`thumb-${index + 1}`}
+                                        className={`p-4 cursor-pointer transition-colors flex justify-center relative ${pageNumber === index + 1 ? 'bg-blue-100/50 border-l-4 border-blue-600' : 'hover:bg-slate-200/50 border-l-4 border-transparent'}`}
+                                        onClick={() => setPageNumber(index + 1)}
+                                    >
+                                        <div className={`shadow-md bg-white relative transition-all ${pageNumber === index + 1 ? 'scale-105 ring-2 ring-blue-500' : 'hover:scale-105'}`}>
+                                            <Page
+                                                pageNumber={index + 1}
+                                                width={110}
+                                                renderTextLayer={false}
+                                                renderAnnotationLayer={false}
+                                            />
+                                            <div className="absolute -bottom-2 -right-2 text-[10px] font-black w-6 h-6 flex items-center justify-center text-slate-600 bg-white rounded-full shadow border border-slate-100">
+                                                {index + 1}
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </Document>
-                    </div>
-                )}
+                    )}
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 overflow-auto p-12 flex justify-center bg-slate-200" ref={containerRef}>
+                    {!isFinished && (
+                        <div className="relative mb-12 shadow-2xl bg-white" style={{ width: 'fit-content', height: 'fit-content' }}>
+                            <Document
+                                file={file}
+                                onLoadSuccess={onDocumentLoadSuccess}
+                                loading={
+                                    <div className="p-20 flex flex-col items-center gap-4">
+                                        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+                                        <p className="font-bold text-slate-400">Préparation...</p>
+                                    </div>
+                                }
+                            >
+                                <div className="relative" ref={pageRef}>
+                                    <Page
+                                        pageNumber={pageNumber}
+                                        scale={scale}
+                                        renderTextLayer={false}
+                                        renderAnnotationLayer={false}
+                                    />
+
+                                    {/* Signatures layer */}
+                                    {signatures.filter(s => s.page === pageNumber).map(sig => (
+                                        <SignatureOverlay
+                                            key={sig.id}
+                                            imageUrl={sig.url}
+                                            width={sig.width}
+                                            height={sig.height}
+                                            position={{ x: sig.x, y: sig.y }}
+                                            onUpdate={(pos) => updateSignaturePosition(sig.id, pos)}
+                                            onRemove={() => removeSignature(sig.id)}
+                                        />
+                                    ))}
+
+                                    {/* Text layer */}
+                                    {textElements.filter(t => t.page === pageNumber).map(text => (
+                                        <TextOverlay
+                                            key={text.id}
+                                            initialText={text.text}
+                                            fontSize={text.fontSize}
+                                            position={{ x: text.x, y: text.y }}
+                                            onUpdate={(data) => updateTextPosition(text.id, data)}
+                                            onRemove={() => removeText(text.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </Document>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="bg-slate-900 text-white px-6 py-2 flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em]">

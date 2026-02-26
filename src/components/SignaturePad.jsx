@@ -81,6 +81,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
         setHasDrawn(true);
         const { x, y } = getCoordinates(e);
         const ctx = canvasRef.current.getContext('2d');
+        ctx.strokeStyle = '#0f172a';
         ctx.beginPath();
         ctx.moveTo(x, y);
         setPoints([{ x, y }]);
@@ -188,7 +189,10 @@ const SignaturePad = ({ onSave, onCancel }) => {
                 ))}
             </div>
 
-            <div className="bg-white border-2 border-slate-100 rounded-[1.8rem] h-[360px] relative overflow-hidden shadow-inner group">
+            <div
+                className="border-2 rounded-[1.8rem] h-[360px] relative overflow-hidden shadow-inner group"
+                style={{ backgroundColor: '#ffffff', borderColor: '#f1f5f9' }}
+            >
                 {mode === 'draw' && (
                     <>
                         <canvas
@@ -211,13 +215,16 @@ const SignaturePad = ({ onSave, onCancel }) => {
 
                 {/* Autre modes restent identiques */}
                 {mode === 'type' && (
-                    <div className="absolute inset-0 p-12 flex flex-col items-center justify-center gap-8 bg-white">
+                    <div
+                        className="absolute inset-0 p-12 flex flex-col items-center justify-center gap-8"
+                        style={{ backgroundColor: '#ffffff' }}
+                    >
                         <input
                             type="text"
                             value={typedName}
                             onChange={(e) => setTypedName(e.target.value)}
                             placeholder="Votre nom..."
-                            className="w-full text-center text-6xl bg-transparent border-b-2 border-slate-100 outline-none focus:border-blue-500 py-6 font-medium"
+                            className="w-full text-center text-6xl bg-transparent border-b-2 border-slate-100 outline-none focus:border-blue-500 py-6 font-medium text-slate-900"
                             style={{ fontFamily: selectedFont.family }}
                         />
                         <div className="flex flex-wrap justify-center gap-2">
@@ -236,7 +243,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
                 )}
 
                 {mode === 'upload' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer px-10" onClick={() => fileInputRef.current.click()}>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer px-10" onClick={() => fileInputRef.current.click()} style={{ backgroundColor: '#ffffff' }}>
                         {uploadedImage ? <img src={uploadedImage} alt="Signature" className="max-h-full object-contain" /> : <div className="text-slate-300 flex flex-col items-center gap-6"><Upload size={48} /><p className="font-bold text-slate-600">Importer une image</p></div>}
                         <input type="file" ref={fileInputRef} onChange={(e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = (ev) => setUploadedImage(ev.target.result); r.readAsDataURL(f); } }} className="hidden" accept="image/*" />
                     </div>
@@ -244,25 +251,27 @@ const SignaturePad = ({ onSave, onCancel }) => {
             </div>
 
             {/* Section Signatures Récentes */}
-            {recentSignatures.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 text-slate-500">
-                        <Clock size={14} />
-                        <span className="text-xs font-bold uppercase tracking-wider">Récentes</span>
+            {
+                recentSignatures.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-slate-500">
+                            <Clock size={14} />
+                            <span className="text-xs font-bold uppercase tracking-wider">Récentes</span>
+                        </div>
+                        <div className="flex gap-3">
+                            {recentSignatures.map((sig, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => onSave(sig)}
+                                    className="h-16 flex-1 bg-white border-2 border-slate-100 rounded-xl cursor-pointer hover:border-blue-400 hover:shadow-md transition-all flex items-center justify-center overflow-hidden p-2 group"
+                                >
+                                    <img src={sig} alt="Signature récente" className="max-h-full opacity-60 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex gap-3">
-                        {recentSignatures.map((sig, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => onSave(sig)}
-                                className="h-16 flex-1 bg-white border-2 border-slate-100 rounded-xl cursor-pointer hover:border-blue-400 hover:shadow-md transition-all flex items-center justify-center overflow-hidden p-2 group"
-                            >
-                                <img src={sig} alt="Signature récente" className="max-h-full opacity-60 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                )
+            }
 
             <div className="flex gap-4">
                 <button onClick={() => { if (mode === 'draw') { const ctx = canvasRef.current.getContext('2d'); ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height); setHasDrawn(false); setPoints([]); } else if (mode === 'type') setTypedName(''); else setUploadedImage(null); }} className="px-6 py-4 font-bold text-slate-400 border-2 border-slate-50 rounded-2xl hover:bg-slate-50">
@@ -283,7 +292,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
                     )}
                 </button>
             </div>
-        </div>
+        </div >
     );
 };
 
