@@ -107,6 +107,7 @@ function App() {
               file={file}
               signatureUrl={signatureUrl}
               onChangeSignature={() => setStep(2)}
+              onFinalize={reset}
             />
           </div>
         )}

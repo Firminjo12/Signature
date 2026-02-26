@@ -8,15 +8,19 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 // Set worker path
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const PdfEditor = ({ file, signatureUrl, onChangeSignature }) => {
+const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [signatures, setSignatures] = useState([]);
     const [textElements, setTextElements] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isFinished, setIsFinished] = useState(false);
     const [scale, setScale] = useState(1.1);
     const containerRef = useRef(null);
     const pageRef = useRef(null);
+
+    // Ajout de la prop onFinalize
+    // ...existing code...
 
     function onDocumentLoadSuccess({ numPages }) {
         setNumPages(numPages);
@@ -145,22 +149,57 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature }) => {
 
             const link = document.createElement('a');
             link.href = url;
-            link.download = `signe_${file.name.replace(/\.[^/.]+$/, "")}.pdf`;
+            link.download = `signe_${file.name ? file.name.replace(/\.[^/.]+$/, "") : "document"}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
-            setTimeout(() => URL.revokeObjectURL(url), 100);
+            // Petit délai pour laisser le téléchargement se lancer avant d'afficher l'écran de succès
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                setIsProcessing(false);
+                setIsFinished(true); // Affiche l'écran de confirmation au lieu de rediriger directement
+            }, 1000);
+
         } catch (error) {
             console.error('PdfEditor Error:', error);
             alert(`Erreur: ${error.message}`);
-        } finally {
             setIsProcessing(false);
         }
     };
 
     const zoomIn = () => setScale(prev => Math.min(prev + 0.1, 2.5));
     const zoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.4));
+
+    if (isFinished) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full bg-slate-50 p-8">
+                <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-xl border border-slate-100 flex flex-col items-center space-y-6 text-center">
+                    <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-2 shadow-inner">
+                        <CheckCircle size={48} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">C'est signé !</h2>
+                        <p className="text-slate-500">Votre document a été finalisé et téléchargé avec succès.</p>
+                    </div>
+
+                    <div className="w-full pt-4">
+                        <button
+                            onClick={() => {
+                                setIsFinished(false);
+                                if (onFinalize) onFinalize();
+                            }}
+                            className="w-full py-4 px-6 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+                        >
+                            <Plus size={20} />
+                            Signer un autre document
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full bg-slate-200 overflow-hidden">
