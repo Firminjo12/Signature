@@ -19,6 +19,8 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
     const containerRef = useRef(null);
     const pageRef = useRef(null);
 
+    const [finalPdfUrl, setFinalPdfUrl] = useState(null);
+
     // Ajout de la prop onFinalize
     // ...existing code...
 
@@ -146,6 +148,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
+            setFinalPdfUrl(url);
 
             const link = document.createElement('a');
             link.href = url;
@@ -154,12 +157,12 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
             link.click();
             document.body.removeChild(link);
 
-            // Petit délai pour laisser le téléchargement se lancer avant d'afficher l'écran de succès
+            // Délai de 1.5 seconde pour garantir que le fichier soit bien téléchargé 
+            // par le navigateur completement avant d'entraîner l'actualisation de la page.
             setTimeout(() => {
-                URL.revokeObjectURL(url);
                 setIsProcessing(false);
-                setIsFinished(true); // Affiche l'écran de confirmation au lieu de rediriger directement
-            }, 1000);
+                if (onFinalize) onFinalize(); // Cela exécute window.location.reload() dans App.jsx
+            }, 1500);
 
         } catch (error) {
             console.error('PdfEditor Error:', error);
@@ -179,33 +182,27 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                         <CheckCircle size={48} />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-4 w-full">
                         <h2 className="text-3xl font-black text-slate-900 tracking-tight">C'est signé !</h2>
-                        <p className="text-slate-500">Votre document a bien été préparé.</p>
+
+                        <div className="h-px bg-slate-100 w-full my-6"></div>
+
+                        <p className="text-xl font-bold text-slate-800">
+                            Voulez-vous signer un autre document ?
+                        </p>
                     </div>
 
-                    <div className="w-full pt-4 flex flex-col gap-3">
+                    <div className="w-full pt-4">
                         <button
                             onClick={() => {
-                                // Redéclenche le vrai téléchargement depuis l'URL locale encore active ou une sauvegarde si nécessaire
-                                // L'action de téléchargement avait déjà été faite plus haut, mais le message le confirme
-                                window.alert("Le téléchargement devrait déjà avoir démarré dans votre navigateur ! Si ce n'est pas le cas, vérifiez vos bloqueurs de pop-up.");
-                            }}
-                            className="w-full py-4 px-6 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Download size={20} />
-                            Télécharger à nouveau
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setIsFinished(false);
+                                // Nettoyage de l'url pour libérer la mémoire, puis rechargement de la page
+                                if (finalPdfUrl) URL.revokeObjectURL(finalPdfUrl);
                                 if (onFinalize) onFinalize();
                             }}
-                            className="w-full py-4 px-6 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+                            className="w-full py-4 px-6 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex items-center justify-center gap-2 text-lg"
                         >
-                            <Plus size={20} />
-                            Signer un autre document
+                            <Plus size={24} />
+                            Oui, signer un autre
                         </button>
                     </div>
                 </div>
@@ -301,52 +298,54 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
             </div>
 
             <div className="flex-1 overflow-auto p-12 flex justify-center bg-slate-200" ref={containerRef}>
-                <div className="relative mb-12 shadow-2xl bg-white" style={{ width: 'fit-content', height: 'fit-content' }}>
-                    <Document
-                        file={file}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        loading={
-                            <div className="p-20 flex flex-col items-center gap-4">
-                                <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-                                <p className="font-bold text-slate-400">Préparation...</p>
+                {!isFinished && (
+                    <div className="relative mb-12 shadow-2xl bg-white" style={{ width: 'fit-content', height: 'fit-content' }}>
+                        <Document
+                            file={file}
+                            onLoadSuccess={onDocumentLoadSuccess}
+                            loading={
+                                <div className="p-20 flex flex-col items-center gap-4">
+                                    <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+                                    <p className="font-bold text-slate-400">Préparation...</p>
+                                </div>
+                            }
+                        >
+                            <div className="relative" ref={pageRef}>
+                                <Page
+                                    pageNumber={pageNumber}
+                                    scale={scale}
+                                    renderTextLayer={false}
+                                    renderAnnotationLayer={false}
+                                />
+
+                                {/* Signatures layer */}
+                                {signatures.filter(s => s.page === pageNumber).map(sig => (
+                                    <SignatureOverlay
+                                        key={sig.id}
+                                        imageUrl={sig.url}
+                                        width={sig.width}
+                                        height={sig.height}
+                                        position={{ x: sig.x, y: sig.y }}
+                                        onUpdate={(pos) => updateSignaturePosition(sig.id, pos)}
+                                        onRemove={() => removeSignature(sig.id)}
+                                    />
+                                ))}
+
+                                {/* Text layer */}
+                                {textElements.filter(t => t.page === pageNumber).map(text => (
+                                    <TextOverlay
+                                        key={text.id}
+                                        initialText={text.text}
+                                        fontSize={text.fontSize}
+                                        position={{ x: text.x, y: text.y }}
+                                        onUpdate={(data) => updateTextPosition(text.id, data)}
+                                        onRemove={() => removeText(text.id)}
+                                    />
+                                ))}
                             </div>
-                        }
-                    >
-                        <div className="relative" ref={pageRef}>
-                            <Page
-                                pageNumber={pageNumber}
-                                scale={scale}
-                                renderTextLayer={false}
-                                renderAnnotationLayer={false}
-                            />
-
-                            {/* Signatures layer */}
-                            {signatures.filter(s => s.page === pageNumber).map(sig => (
-                                <SignatureOverlay
-                                    key={sig.id}
-                                    imageUrl={sig.url}
-                                    width={sig.width}
-                                    height={sig.height}
-                                    position={{ x: sig.x, y: sig.y }}
-                                    onUpdate={(pos) => updateSignaturePosition(sig.id, pos)}
-                                    onRemove={() => removeSignature(sig.id)}
-                                />
-                            ))}
-
-                            {/* Text layer */}
-                            {textElements.filter(t => t.page === pageNumber).map(text => (
-                                <TextOverlay
-                                    key={text.id}
-                                    initialText={text.text}
-                                    fontSize={text.fontSize}
-                                    position={{ x: text.x, y: text.y }}
-                                    onUpdate={(data) => updateTextPosition(text.id, data)}
-                                    onRemove={() => removeText(text.id)}
-                                />
-                            ))}
-                        </div>
-                    </Document>
-                </div>
+                        </Document>
+                    </div>
+                )}
             </div>
 
             <div className="bg-slate-900 text-white px-6 py-2 flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em]">

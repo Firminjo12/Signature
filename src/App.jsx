@@ -44,9 +44,9 @@ function App() {
   };
 
   const reset = () => {
-    setFile(null);
-    setSignatureUrl(null);
-    setStep(1);
+    // Force un rechargement complet de la page pour éviter tout conflit de DOM avec react-pdf
+    // et pour nettoyer parfaitement la mémoire après la finalisation d'un document.
+    window.location.reload();
   };
 
   return (
@@ -98,7 +98,7 @@ function App() {
       <main className="flex-1 flex flex-col">
         {/* Rendu conditionnel direct sans Framer Motion pour la stabilité */}
         {step === 1 && (
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div key="step-1" className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="max-w-2xl w-full space-y-8 text-center">
               <div className="space-y-4">
                 <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -115,7 +115,7 @@ function App() {
         )}
 
         {step === 2 && (
-          <div className="flex-1 flex items-center justify-center p-8 bg-slate-100/50">
+          <div key="step-2" className="flex-1 flex items-center justify-center p-8 bg-slate-100/50">
             <div className="max-w-2xl w-full">
               <SignaturePad
                 onSave={handleSignatureSave}
@@ -126,7 +126,7 @@ function App() {
         )}
 
         {step === 3 && (
-          <div className="flex-1 h-full">
+          <div key="step-3" className="flex-1 h-full">
             <PdfEditor
               file={file}
               signatureUrl={signatureUrl}
