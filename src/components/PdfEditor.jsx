@@ -13,6 +13,8 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
     const [pageNumber, setPageNumber] = useState(1);
     const [signatures, setSignatures] = useState([]);
     const [textElements, setTextElements] = useState([]);
+    const [opacity, setOpacity] = useState(1.0);
+    const [selectedId, setSelectedId] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [scale, setScale] = useState(1.1);
@@ -31,31 +33,38 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
     const addSignature = () => {
         if (!signatureUrl) return;
 
-        const sigWidthPoints = 150;
-        const sigHeightPoints = 75;
-
-        let posX = 50; // points
-        let posY = 50; // points
+        let sigWidth = 150; // Default width in points
+        let sigHeight = 75; // Default height in points (maintaining aspect ratio 150/75 = 2)
+        let posX = 50; // Default position in points
+        let posY = 50; // Default position in points
 
         if (pageRef.current) {
             const { offsetWidth, offsetHeight } = pageRef.current;
+
+            // Adapter la taille initiale si l'écran est petit
+            sigWidth = offsetWidth < 500 ? 180 : 150;
+            sigHeight = sigWidth * (75 / 150); // Maintain aspect ratio
+
             // Calculer le centre en pixels UI puis convertir en points PDF
-            const uiCenterX = (offsetWidth - (sigWidthPoints * scale)) / 2;
-            const uiCenterY = (offsetHeight - (sigHeightPoints * scale)) / 2;
+            const uiCenterX = (offsetWidth - (sigWidth * scale)) / 2;
+            const uiCenterY = (offsetHeight - (sigHeight * scale)) / 2;
             posX = uiCenterX / scale;
             posY = uiCenterY / scale;
         }
 
+        const newId = Date.now();
         const newSignature = {
-            id: Date.now(),
+            id: newId,
             url: signatureUrl,
             page: pageNumber,
             x: posX,
             y: posY,
-            width: sigWidthPoints,
-            height: sigHeightPoints
+            width: sigWidth,
+            height: sigHeight,
+            opacity: opacity
         };
         setSignatures([...signatures, newSignature]);
+        setSelectedId(newId);
     };
 
     const addText = (textValue = "Nouveau texte") => {
@@ -79,7 +88,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
             x: posX,
             y: posY,
             fontSize: fontSizePoints,
-            color: '#0f172a'
+            color: '#000000'
         };
         setTextElements([...textElements, newText]);
     };
@@ -98,6 +107,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
     };
 
     const updateSignaturePosition = (id, pos) => {
+        setSelectedId(id);
         // Convertir les pixels UI reçus en points PDF (indépendant du zoom)
         setSignatures(signatures.map(s => s.id === id ? {
             ...s,
@@ -106,6 +116,13 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
             width: pos.width / scale,
             height: pos.height / scale
         } : s));
+    };
+
+    const handleOpacityChange = (newVal) => {
+        setOpacity(newVal);
+        if (selectedId) {
+            setSignatures(signatures.map(s => s.id === selectedId ? { ...s, opacity: newVal } : s));
+        }
     };
 
     const updateTextPosition = (id, data) => {
@@ -155,6 +172,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                     y: pdfHeight - sig.y - sig.height,
                     width: sig.width,
                     height: sig.height,
+                    opacity: sig.opacity || 1
                 });
             }
 
@@ -169,7 +187,7 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                     y: pdfHeight - textItem.y - textItem.fontSize,
                     size: textItem.fontSize,
                     font: helveticaFont,
-                    color: rgb(0.06, 0.09, 0.16), // Dark slate-like color
+                    color: rgb(0, 0, 0), // Pure Black
                 });
             }
 
@@ -313,6 +331,25 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                             <Trash2 size={20} />
                         </button>
                     </div>
+
+                    <div className="h-6 w-px bg-slate-200 mx-1 lg:mx-2 hidden md:block" />
+
+                    {/* Opacity Slider */}
+                    <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 min-w-[200px]">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Visibilité</span>
+                        <input
+                            type="range"
+                            min="0.1"
+                            max="1.0"
+                            step="0.01"
+                            value={opacity}
+                            onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
+                            className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <span className="text-xs font-bold text-slate-600 min-w-[35px] text-right">
+                            {Math.round(opacity * 100)}%
+                        </span>
+                    </div>
                 </div>
 
                 <button
@@ -403,8 +440,14 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                                             width={sig.width * scale}
                                             height={sig.height * scale}
                                             position={{ x: sig.x * scale, y: sig.y * scale }}
+                                            opacity={sig.opacity}
+                                            isSelected={selectedId === sig.id}
                                             onUpdate={(pos) => updateSignaturePosition(sig.id, pos)}
                                             onRemove={() => removeSignature(sig.id)}
+                                            onSelect={() => {
+                                                setSelectedId(sig.id);
+                                                setOpacity(sig.opacity || 1.0);
+                                            }}
                                         />
                                     ))}
 

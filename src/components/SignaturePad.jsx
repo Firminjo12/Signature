@@ -40,8 +40,8 @@ const SignaturePad = ({ onSave, onCancel }) => {
 
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3.5; // Augmenté pour plus de "noirceur"
         }
     }, [mode]);
 
@@ -81,7 +81,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
         setHasDrawn(true);
         const { x, y } = getCoordinates(e);
         const ctx = canvasRef.current.getContext('2d');
-        ctx.strokeStyle = '#0f172a';
+        ctx.strokeStyle = '#000000';
         ctx.beginPath();
         ctx.moveTo(x, y);
         setPoints([{ x, y }]);
@@ -116,7 +116,7 @@ const SignaturePad = ({ onSave, onCancel }) => {
             ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
         }
 
-        ctx.lineWidth = 2.8;
+        ctx.lineWidth = 3.8; // Plus épais pour un rendu plus intense
         ctx.stroke();
     };
 
@@ -137,8 +137,8 @@ const SignaturePad = ({ onSave, onCancel }) => {
                 tempCanvas.width = 600;
                 tempCanvas.height = 200;
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.font = `60px ${selectedFont.family.replace(/'/g, "")}`;
-                tempCtx.fillStyle = '#0f172a';
+                tempCtx.font = `bold 65px ${selectedFont.family.replace(/'/g, "")}`;
+                tempCtx.fillStyle = '#000000';
                 tempCtx.textAlign = 'center';
                 tempCtx.textBaseline = 'middle';
                 tempCtx.fillText(typedName, 300, 100);

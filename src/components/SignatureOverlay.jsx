@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
 import { GripVertical, X } from 'lucide-react';
 
-const SignatureOverlay = ({ imageUrl, onRemove, onUpdate, width = 200, height = 100, position = { x: 0, y: 0 } }) => {
+const SignatureOverlay = ({ imageUrl, onRemove, onUpdate, onSelect, width = 200, height = 100, position = { x: 0, y: 0 }, opacity = 1, isSelected = false }) => {
     const [size, setSize] = useState({ width, height });
 
     // Use motion values for smooth dragging and state synchronization
@@ -32,9 +32,10 @@ const SignatureOverlay = ({ imageUrl, onRemove, onUpdate, width = 200, height = 
         <motion.div
             drag
             dragMomentum={false}
-            style={{ x, y, width: size.width, height: size.height }}
+            onPointerDown={onSelect}
+            style={{ x, y, width: size.width, height: size.height, opacity, zIndex: isSelected ? 40 : 20 }}
             onDragEnd={handleDragEnd}
-            className="absolute top-0 left-0 cursor-move group select-none touch-none z-20"
+            className={`absolute top-0 left-0 cursor-move group select-none touch-none ${isSelected ? 'ring-2 ring-blue-500 rounded-lg' : ''}`}
         >
             <div className="relative w-full h-full border-2 border-transparent group-hover:border-blue-500 rounded-lg p-1 transition-colors bg-white/10">
                 {/* Toolbar */}
@@ -53,34 +54,48 @@ const SignatureOverlay = ({ imageUrl, onRemove, onUpdate, width = 200, height = 
                     src={imageUrl}
                     alt="Signature"
                     className="w-full h-full object-contain pointer-events-none"
+                    style={{ filter: 'contrast(1.4) brightness(0.8)' }} // Augmente la "noirceur" visuelle
                 />
 
-                {/* Resize Handle */}
+                {/* Resize Handle - Larger and touch-friendly */}
                 <div
-                    className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-nwse-resize shadow-lg"
-                    onMouseDown={(e) => {
+                    className={`absolute -bottom-2 -right-2 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white cursor-nwse-resize shadow-xl z-30 transition-opacity ${isSelected ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100'}`}
+                    onPointerDown={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         const startX = e.clientX;
+                        const startY = e.clientY;
                         const startWidth = size.width;
+                        const startHeight = size.height;
 
-                        const handleMouseMove = (moveEvent) => {
-                            const delta = moveEvent.clientX - startX;
-                            const newWidth = Math.max(50, startWidth + delta);
-                            const newHeight = newWidth * (height / width); // Use initial aspect ratio
+                        const handlePointerMove = (moveEvent) => {
+                            // Calculate delta based on whichever dimension changed more to keep it natural
+                            const deltaX = moveEvent.clientX - startX;
+                            const newWidth = Math.max(60, startWidth + deltaX);
+
+                            // Maintain aspect ratio
+                            const aspectRatio = height / width;
+                            const newHeight = newWidth * aspectRatio;
+
                             setSize({ width: newWidth, height: newHeight });
-                            onUpdate({ x: x.get(), y: y.get(), width: newWidth, height: newHeight });
+                            onUpdate({
+                                x: x.get(),
+                                y: y.get(),
+                                width: newWidth,
+                                height: newHeight
+                            });
                         };
 
-                        const handleMouseUp = () => {
-                            window.removeEventListener('mousemove', handleMouseMove);
-                            window.removeEventListener('mouseup', handleMouseUp);
+                        const handlePointerUp = () => {
+                            window.removeEventListener('pointermove', handlePointerMove);
+                            window.removeEventListener('pointerup', handlePointerUp);
                         };
 
-                        window.addEventListener('mousemove', handleMouseMove);
-                        window.addEventListener('mouseup', handleMouseUp);
+                        window.addEventListener('pointermove', handlePointerMove);
+                        window.addEventListener('pointerup', handlePointerUp);
                     }}
                 >
-                    <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <div className="w-2.5 h-2.5 bg-white rounded-full shadow-inner" />
                 </div>
             </div>
         </motion.div>
