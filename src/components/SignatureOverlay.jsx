@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
 import { GripVertical, X } from 'lucide-react';
 
@@ -8,6 +8,16 @@ const SignatureOverlay = ({ imageUrl, onRemove, onUpdate, width = 200, height = 
     // Use motion values for smooth dragging and state synchronization
     const x = useMotionValue(position.x);
     const y = useMotionValue(position.y);
+
+    // Sync with props when they change (e.g. zoom)
+    useEffect(() => {
+        x.set(position.x);
+        y.set(position.y);
+    }, [position.x, position.y, x, y]);
+
+    useEffect(() => {
+        setSize({ width, height });
+    }, [width, height]);
 
     const handleDragEnd = () => {
         onUpdate({

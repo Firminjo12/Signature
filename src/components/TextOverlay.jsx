@@ -11,6 +11,16 @@ const TextOverlay = ({ initialText, onRemove, onUpdate, position = { x: 0, y: 0 
     const x = useMotionValue(position.x);
     const y = useMotionValue(position.y);
 
+    // Sync with props when they change (e.g. zoom)
+    useEffect(() => {
+        x.set(position.x);
+        y.set(position.y);
+    }, [position.x, position.y, x, y]);
+
+    useEffect(() => {
+        setSize({ fontSize });
+    }, [fontSize]);
+
     useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus();

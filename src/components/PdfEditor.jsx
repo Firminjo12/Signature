@@ -30,26 +30,55 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
 
     const addSignature = () => {
         if (!signatureUrl) return;
+
+        const sigWidthPoints = 150;
+        const sigHeightPoints = 75;
+
+        let posX = 50; // points
+        let posY = 50; // points
+
+        if (pageRef.current) {
+            const { offsetWidth, offsetHeight } = pageRef.current;
+            // Calculer le centre en pixels UI puis convertir en points PDF
+            const uiCenterX = (offsetWidth - (sigWidthPoints * scale)) / 2;
+            const uiCenterY = (offsetHeight - (sigHeightPoints * scale)) / 2;
+            posX = uiCenterX / scale;
+            posY = uiCenterY / scale;
+        }
+
         const newSignature = {
             id: Date.now(),
             url: signatureUrl,
             page: pageNumber,
-            x: 50,
-            y: 50,
-            width: 150,
-            height: 75
+            x: posX,
+            y: posY,
+            width: sigWidthPoints,
+            height: sigHeightPoints
         };
         setSignatures([...signatures, newSignature]);
     };
 
     const addText = (textValue = "Nouveau texte") => {
+        const fontSizePoints = 16;
+        let posX = 100; // points
+        let posY = 100; // points
+
+        if (pageRef.current) {
+            const { offsetWidth, offsetHeight } = pageRef.current;
+            // Estimer la largeur du texte pour le centrage (approx 100 points)
+            const uiCenterX = (offsetWidth - (100 * scale)) / 2;
+            const uiCenterY = (offsetHeight - (fontSizePoints * scale)) / 2;
+            posX = uiCenterX / scale;
+            posY = uiCenterY / scale;
+        }
+
         const newText = {
             id: Date.now(),
             text: textValue,
             page: pageNumber,
-            x: 100,
-            y: 100,
-            fontSize: 16,
+            x: posX,
+            y: posY,
+            fontSize: fontSizePoints,
             color: '#0f172a'
         };
         setTextElements([...textElements, newText]);
@@ -69,11 +98,25 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
     };
 
     const updateSignaturePosition = (id, pos) => {
-        setSignatures(signatures.map(s => s.id === id ? { ...s, ...pos } : s));
+        // Convertir les pixels UI reçus en points PDF (indépendant du zoom)
+        setSignatures(signatures.map(s => s.id === id ? {
+            ...s,
+            x: pos.x / scale,
+            y: pos.y / scale,
+            width: pos.width / scale,
+            height: pos.height / scale
+        } : s));
     };
 
     const updateTextPosition = (id, data) => {
-        setTextElements(textElements.map(t => t.id === id ? { ...t, ...data } : t));
+        // Convertir les pixels UI reçus en points PDF
+        setTextElements(textElements.map(t => t.id === id ? {
+            ...t,
+            ...data,
+            x: data.x / scale,
+            y: data.y / scale,
+            fontSize: data.fontSize / scale
+        } : t));
     };
 
     const clearAll = () => {
@@ -104,42 +147,27 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                 }
 
                 const targetPage = pages[sig.page - 1];
-                const { width: pdfWidth, height: pdfHeight } = targetPage.getSize();
+                const { height: pdfHeight } = targetPage.getSize();
 
-                const uiWidth = pdfWidth * scale;
-                const uiHeight = pdfHeight * scale;
-
-                const relX = sig.x / uiWidth;
-                const relY = sig.y / uiHeight;
-                const relW = sig.width / uiWidth;
-                const relH = sig.height / uiHeight;
-
+                // Utiliser directement les points PDF stockés
                 targetPage.drawImage(signatureImage, {
-                    x: relX * pdfWidth,
-                    y: pdfHeight - (relY * pdfHeight) - (relH * pdfHeight),
-                    width: relW * pdfWidth,
-                    height: relH * pdfHeight,
+                    x: sig.x,
+                    y: pdfHeight - sig.y - sig.height,
+                    width: sig.width,
+                    height: sig.height,
                 });
             }
 
             // 2. Process Text Elements
             for (const textItem of textElements) {
                 const targetPage = pages[textItem.page - 1];
-                const { width: pdfWidth, height: pdfHeight } = targetPage.getSize();
+                const { height: pdfHeight } = targetPage.getSize();
 
-                const uiWidth = pdfWidth * scale;
-                const uiHeight = pdfHeight * scale;
-
-                const relX = textItem.x / uiWidth;
-                const relY = textItem.y / uiHeight;
-
-                // Adjust text size relative to PDF points
-                const pdfFontSize = (textItem.fontSize / (uiWidth)) * pdfWidth;
-
+                // Utiliser directement les points PDF stockés
                 targetPage.drawText(textItem.text, {
-                    x: relX * pdfWidth,
-                    y: pdfHeight - (relY * pdfHeight) - pdfFontSize,
-                    size: pdfFontSize,
+                    x: textItem.x,
+                    y: pdfHeight - textItem.y - textItem.fontSize,
+                    size: textItem.fontSize,
                     font: helveticaFont,
                     color: rgb(0.06, 0.09, 0.16), // Dark slate-like color
                 });
@@ -372,9 +400,9 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                                         <SignatureOverlay
                                             key={sig.id}
                                             imageUrl={sig.url}
-                                            width={sig.width}
-                                            height={sig.height}
-                                            position={{ x: sig.x, y: sig.y }}
+                                            width={sig.width * scale}
+                                            height={sig.height * scale}
+                                            position={{ x: sig.x * scale, y: sig.y * scale }}
                                             onUpdate={(pos) => updateSignaturePosition(sig.id, pos)}
                                             onRemove={() => removeSignature(sig.id)}
                                         />
@@ -385,8 +413,8 @@ const PdfEditor = ({ file, signatureUrl, onChangeSignature, onFinalize }) => {
                                         <TextOverlay
                                             key={text.id}
                                             initialText={text.text}
-                                            fontSize={text.fontSize}
-                                            position={{ x: text.x, y: text.y }}
+                                            fontSize={text.fontSize * scale}
+                                            position={{ x: text.x * scale, y: text.y * scale }}
                                             onUpdate={(data) => updateTextPosition(text.id, data)}
                                             onRemove={() => removeText(text.id)}
                                         />
